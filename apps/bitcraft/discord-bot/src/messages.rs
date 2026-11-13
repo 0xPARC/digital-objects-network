@@ -16,10 +16,10 @@ pub fn standings(top: &Leaderboard) -> Vec<String> {
     let mut messages = vec!["**Bitcraft leaderboard**".to_owned()];
     for (index, entry) in top.entries.iter().enumerate() {
         let line = format!(
-            "{}. <@{}> - {:.2} BIT",
+            "{}. <@{}> - {} BIT",
             index + 1,
             entry.user_id,
-            entry.bits
+            format_bits(entry.bits)
         );
         let message = messages.last_mut().unwrap();
         if message.len() + 1 + line.len() > MESSAGE_LIMIT {
@@ -45,14 +45,24 @@ pub fn rank(published: &Leaderboard, player: Id<UserMarker>) -> String {
         .position(|entry| entry.user_id == player)
     {
         Some(index) => format!(
-            "<@{player}> is #{} on the Bitcraft leaderboard with {:.2} BIT, as of {as_of}.",
+            "<@{player}> is #{} on the Bitcraft leaderboard with {} BIT, as of {as_of}.",
             index + 1,
-            published.entries[index].bits
+            format_bits(published.entries[index].bits)
         ),
         None => format!(
             "<@{player}> is not in the top {TOP_SIZE} of the Bitcraft leaderboard, as of {as_of}. {JOIN_HINT}"
         ),
     }
+}
+
+fn format_bits(bits: f64) -> String {
+    let mut formatted = format!("{bits:.2}");
+    let mut index = formatted.find('.').unwrap_or(formatted.len());
+    while index > 3 {
+        index -= 3;
+        formatted.insert(index, ',');
+    }
+    formatted
 }
 
 #[cfg(test)]
@@ -76,6 +86,10 @@ mod tests {
             standings(&with_players(&[(1, 2.0), (2, 3.125)])),
             ["**Bitcraft leaderboard**\n1. <@2> - 3.12 BIT\n2. <@1> - 2.00 BIT"]
         );
+        assert_eq!(
+            standings(&with_players(&[(1, 1_000_000.0), (2, 999.999)])),
+            ["**Bitcraft leaderboard**\n1. <@1> - 1,000,000.00 BIT\n2. <@2> - 1,000.00 BIT"]
+        );
 
         let scores: Vec<_> = (0..TOP_SIZE as u64)
             .map(|index| (1_400_000_000_000_000_000 + index, 100_000.0 + index as f64))
@@ -95,13 +109,13 @@ mod tests {
         assert_eq!(lines.len(), TOP_SIZE + 1);
         assert_eq!(
             lines[TOP_SIZE],
-            "50. <@1400000000000000000> - 100000.00 BIT"
+            "50. <@1400000000000000000> - 100,000.00 BIT"
         );
     }
 
     #[test]
     fn rank_reads_the_published_leaderboard() {
-        let mut published = with_players(&[(1, 2.0), (2, 3.0), (3, 1.0)]);
+        let mut published = with_players(&[(1, 1_234_567.89), (2, 2_000_000.0), (3, 1.0)]);
         assert_eq!(
             rank(&published, Id::new(1)),
             "The Bitcraft leaderboard has not been published yet."
@@ -109,7 +123,7 @@ mod tests {
         published.updated_at = Some(OffsetDateTime::from_unix_timestamp(1_793_188_800).unwrap());
         assert_eq!(
             rank(&published, Id::new(1)),
-            "<@1> is #2 on the Bitcraft leaderboard with 2.00 BIT, as of <t:1793188800:R>."
+            "<@1> is #2 on the Bitcraft leaderboard with 1,234,567.89 BIT, as of <t:1793188800:R>."
         );
         assert_eq!(
             rank(&published, Id::new(9)),
