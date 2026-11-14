@@ -1739,7 +1739,7 @@ impl ActionHandle {
                 })?;
             if !exe_ctx.mock {
                 let mut i = 0;
-                while u256_gt(&RawValue::from(obj.commitment()), &target_raw) {
+                while RawValue::from(obj.commitment()) > target_raw {
                     v = exe_ctx.rand_value();
                     obj.update(&key_name, &v).unwrap();
                     i += 1;
@@ -1941,19 +1941,6 @@ fn add_intro_pod(exe_ctx: &mut ExeContext, pod: Box<dyn Pod>) -> Statement {
     let main = exe_ctx.main_pod(pod);
     exe_ctx.bld.builder.add_pod(main).unwrap();
     st
-}
-
-/// Lexicographic (little-endian limb order) u256 `>` comparison on `RawValue`.
-/// `RawValue::0[0]` is the least-significant limb; `0[3]` is the most-significant.
-fn u256_gt(a: &RawValue, b: &RawValue) -> bool {
-    for i in (0..4).rev() {
-        let la = a.0[i].0;
-        let lb = b.0[i].0;
-        if la != lb {
-            return la > lb;
-        }
-    }
-    false
 }
 
 /// Helper function to type check and cast an array of pairs of String and VarOrValue, to be used
