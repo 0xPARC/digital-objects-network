@@ -177,13 +177,10 @@ impl LtEqU256Pod {
     ) -> Result<LtEqU256Pod> {
         assert_eq!(params, &Params::default());
 
-        // Pre-check difficulty
-        for (lhs_limb, rhs_limb) in lhs.0.iter().zip(rhs.0.iter()).rev() {
-            if lhs_limb.0 > rhs_limb.0 {
-                anyhow::bail!("lhs > rhs in LtEqU256");
-            } else if lhs_limb.0 < rhs_limb.0 {
-                break;
-            }
+        // Pre-check difficulty. `RawValue`'s order compares canonical limbs, as the circuit
+        // does; a raw limb can hold value + p, so comparing raw limbs rejects small values.
+        if lhs > rhs {
+            anyhow::bail!("lhs > rhs in LtEqU256");
         }
 
         // Build the proof
@@ -612,6 +609,22 @@ mod tests {
         // This should fail
         let result = LtEqU256Pod::new(&params, vd_set.clone(), input, rhs);
         assert!(result.is_err());
+
+        Ok(())
+    }
+
+    /// Hashes can store a limb below 2^32 - 1 as value + p; the pod must compare its value.
+    #[test]
+    fn test_ltequ256_pod_small_limb_stored_noncanonically() -> Result<()> {
+        const P: u64 = 0xffff_ffff_0000_0001;
+        let params = Params::default();
+        let vd_set = &*DEFAULT_VD_SET;
+
+        let rhs = RawValue([F::ZERO, F::ZERO, F::ZERO, F(1000)]);
+        let lhs = RawValue([F(7), F(8), F(9), F(5 + P)]);
+
+        let pod = LtEqU256Pod::new(&params, vd_set.clone(), lhs, rhs)?;
+        pod.verify()?;
 
         Ok(())
     }
