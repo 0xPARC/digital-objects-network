@@ -1,0 +1,11 @@
+[package]
+name = "dobj-interp-wasm"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+dobj-kernel = { path = "../kernel" }
+# Validation stays on: an unvalidated module could break the interpreter's isolation.
+wasmi = { version = "=2.0.0", default-features = false, features = ["stable", "validate", "libm", "portable-dispatch", "prefer-btree-collections"] }
+
+[workspace]

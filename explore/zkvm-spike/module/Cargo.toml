@@ -1,0 +1,33 @@
+[package]
+name = "craft-basics-module"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+# wasm32: the cdylib is the module. riscv32im: the bin, linked with rv32.ld,
+# is flattened into the module image by the host.
+[lib]
+crate-type = ["cdylib"]
+path = "src/lib.rs"
+
+[[bin]]
+name = "craft-basics-rv32"
+path = "src/main.rs"
+
+[features]
+# Adds 256 never-called functions, to measure module size against startup cost.
+bloat = []
+# craft_wood_pick also creates a Stone, which no class whitelist allows it to.
+evil = []
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+debug = false
+strip = true
+
+[profile.dev]
+panic = "abort"

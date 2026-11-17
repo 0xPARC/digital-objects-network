@@ -1,0 +1,11 @@
+[package]
+name = "interp-check"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+dobj-kernel = { path = "../kernel" }
+dobj-interp-rv32 = { path = "../interp-rv32" }
+dobj-interp-wasm = { path = "../interp-wasm" }
+
+[workspace]

@@ -1,0 +1,9 @@
+[package]
+name = "dobj-interp-rv32"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+dobj-kernel = { path = "../kernel" }
+
+[workspace]

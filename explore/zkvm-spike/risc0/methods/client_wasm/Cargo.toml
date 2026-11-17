@@ -1,0 +1,13 @@
+[package]
+name = "client_wasm"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+risc0-zkvm = { version = "=3.1.0", default-features = false, features = ["std"] }
+dobj-kernel = { path = "../../../kernel" }
+dobj-interp-wasm = { path = "../../../interp-wasm" }
+postcard = { version = "1", default-features = false, features = ["alloc"] }
+serde = { version = "1", default-features = false }

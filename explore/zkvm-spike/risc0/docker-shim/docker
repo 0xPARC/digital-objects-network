@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Stands in for `docker` when risc0-groth16 shells out to the
+# risczero/risc0-groth16-prover image: runs that image's prover natively from
+# an unpacked rootfs (see ../README.md). Supports only the two invocations
+# risc0-groth16 makes. risc0-groth16 discards this script's output, so it is
+# also appended to $DOCKER_SHIM_LOG.
+set -euo pipefail
+
+rootfs="${R0_GROTH16_ROOTFS:-$HOME/.cache/zkvm-spike/r0-groth16-rootfs}"
+log="${DOCKER_SHIM_LOG:-$HOME/.cache/zkvm-spike/docker-shim.log}"
+
+if [[ "${1:-}" == "--version" ]]; then
+  echo "docker-shim for risc0-groth16-prover (rootfs: $rootfs)"
+  exit 0
+fi
+
+if [[ "${1:-}" != "run" ]]; then
+  echo "docker-shim: unsupported invocation: $*" >&2
+  exit 1
+fi
+shift
+
+mount_dir=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --rm) shift ;;
+    -v) mount_dir="${2%%:/mnt}"; shift 2 ;;
+    *) shift ;;
+  esac
+done
+[[ -n "$mount_dir" ]] || { echo "docker-shim: no -v DIR:/mnt" >&2; exit 1; }
+
+exec > >(tee -a "$log") 2>&1
+echo "=== docker-shim $(date -Is) mount=$mount_dir"
+
+witness="$mount_dir/output.wtns"
+rm -f "$witness"
+mkfifo "$witness"
+ulimit -s 16384
+
+# The circom witness generator opens "<argv[0]>.dat", so, as in the image, it
+# must be invoked by bare name from the directory holding stark_verify.dat.
+export PATH="$rootfs/usr/local/bin:$PATH"
+cd "$rootfs/app"
+(
+  stark_verify "$mount_dir/input.json" "$witness" ||
+    echo "stark_verify failed" > "$witness"
+) &
+prover stark_verify.cs stark_verify_final.pk.dmp "$witness" "$mount_dir/proof.json"
+wait
+rm -f "$witness"
+echo "=== docker-shim done"

@@ -1,0 +1,15 @@
+[package]
+name = "guest"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+guest = []
+
+[dependencies]
+jolt = { package = "jolt-sdk", git = "https://github.com/a16z/jolt", rev = "6d800d22dfe66968f520e95eed3dfdf52e87d562" }
+jolt-inlines-blake3 = { git = "https://github.com/a16z/jolt", rev = "6d800d22dfe66968f520e95eed3dfdf52e87d562" }
+jolt-inlines-sha2 = { git = "https://github.com/a16z/jolt", rev = "6d800d22dfe66968f520e95eed3dfdf52e87d562" }
+dobj-kernel = { path = "../../kernel" }
+dobj-interp-rv32 = { path = "../../interp-rv32" }
+dobj-interp-wasm = { path = "../../interp-wasm" }
