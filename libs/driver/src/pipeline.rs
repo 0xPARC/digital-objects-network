@@ -546,7 +546,7 @@ impl Driver {
         let membership = if let Some(scanned) = &scanned {
             let mut commitments = HashSet::new();
             let mut nullifiers = HashSet::new();
-            for entry in scanned {
+            for entry in scanned.iter().filter(|entry| !entry.record.is_nullified()) {
                 commitments.insert(entry.record.obj.commitment());
                 if let Ok(nullifier) = object_nullifier_hash(&entry.record.obj) {
                     nullifiers.insert(nullifier);
